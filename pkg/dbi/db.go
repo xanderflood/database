@@ -1,9 +1,11 @@
 package dbi
 
 import (
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	// "github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 	perrors "github.com/pkg/errors"
 )
 
@@ -75,13 +77,28 @@ func (db *Database) Index(tableName string) (map[string]string, error) {
 	return nil, nil
 }
 
-func (db *Database) Insert(tableName, document string) error {
-	// uuid, err := uuid.NewV4()
-	// if err != nil {
-	// 	return perrors.Wrapf(err, "failed generating UUIDv4 for table `%s`", tableName)
-	// }
+func (db *Database) Insert(tableName string, document map[string]string) error {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return perrors.Wrapf(err, "failed generating UUIDv4 for table `%s`", tableName)
+	}
 
-	// _, err = db.DB.Exec("INSERT INTO ?(uuid, data) VALUES", uuid, document)
-	// return perrors.Wrapf(err, "failed inserting into `%s`", tableName)
-	return nil
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(tableName),
+		Item: map[string]*dynamodb.AttributeValue{
+			"uuid": &dynamodb.AttributeValue{
+				S: aws.String(uuid.String()),
+			},
+			"moment": &dynamodb.AttributeValue{
+				S: aws.String(time.Now().Format(time.RFC3339)),
+			},
+		},
+	}
+
+	for k, v := range document {
+		input.Item[k] = &dynamodb.AttributeValue{S: aws.String(v)}
+	}
+
+	_, err = db.Client.PutItem(input)
+	return perrors.Wrapf(err, "failed inserting into `%s`", tableName)
 }

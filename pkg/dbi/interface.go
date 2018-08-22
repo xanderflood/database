@@ -5,5 +5,5 @@ package dbi
 type Interface interface {
 	CreateTable(name string) error
 	Index(tableName string) (map[string]string, error)
-	Insert(tableName string, document string) error
+	Insert(tableName string, document map[string]string) error
 }

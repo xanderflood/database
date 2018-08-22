@@ -14,6 +14,7 @@ import (
 
 	"github.com/xanderflood/database/cmd/api/router"
 	"github.com/xanderflood/database/lib/tools"
+	"github.com/xanderflood/database/lib/web"
 	"github.com/xanderflood/database/pkg/dbi"
 )
 
@@ -36,7 +37,8 @@ func main() {
 	dynamoClient := dynamodb.New(session.New(&aws.Config{}))
 
 	server := &router.Server{
-		DB: &dbi.Database{Client: dynamoClient},
+		DB:   &dbi.Database{Client: dynamoClient},
+		Vars: web.MuxVars{},
 	}
 
 	router := router.New(

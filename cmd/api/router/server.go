@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/xanderflood/database/lib/web"
 	"github.com/xanderflood/database/pkg/dbi"
 )
 
 type Server struct {
-	DB dbi.Interface
+	DB   dbi.Interface
+	Vars web.VarsGetter
 }
 
 type createTableRequest struct {
@@ -64,5 +66,51 @@ func (server *Server) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) Insert(w http.ResponseWriter, r *http.Request) {
-	//TODO
+	vars := server.Vars.Get(r)
+	table := strings.TrimSpace(vars["table"])
+	if len(table) == 0 {
+		web.JSONStandardRespond(
+			w,
+			fmt.Sprintf("invalid table name: %s", table),
+			http.StatusBadRequest,
+		)
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	_, err := io.Copy(buf, r.Body)
+	if err != nil {
+		web.JSONStandardRespond(
+			w,
+			fmt.Sprintf("failed to read request body: %s", err.Error()),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	payload := map[string]string{}
+	err = json.Unmarshal(buf.Bytes(), &payload)
+	if err != nil {
+		web.JSONStandardRespond(
+			w,
+			fmt.Sprintf("failed to unmarshal request body: %s", err.Error()),
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	err = server.DB.Insert(table, payload)
+	if err != nil {
+		web.JSONStandardRespond(
+			w,
+			fmt.Sprintf("failed to insert: %s", err.Error()),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	web.JSONStandardRespond(
+		w,
+		fmt.Sprintf("successfully inserted into table: %s", table),
+		http.StatusOK,
+	)
 }

@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/xanderflood/accountant/lib/tools"
-	"github.com/xanderflood/accountant/pkg/middleware"
+
+	"github.com/xanderflood/database/lib/middleware"
+	"github.com/xanderflood/database/lib/tools"
+	"github.com/xanderflood/database/pkg/routes"
 )
 
 //Routes collection of all routes
@@ -22,9 +24,9 @@ func (router Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	router(w, r)
 }
 
-//New returns a new router for the accountant api
+//New returns a new router for the database api
 func New(
-	routes Routes,
+	server Routes,
 	log tools.Logger,
 	publicAssetsPath string,
 ) Router {
@@ -47,16 +49,16 @@ func New(
 	//index
 	r.HandleFunc(
 		res.CreateTable.Route(),
-		routes.CreateTable(w, r),
-	).Methods("GET")
+		server.CreateTable,
+	).Methods("POST")
 	r.HandleFunc(
 		res.Index.Route(),
-		routes.Index(w, r),
+		server.Index,
 	).Methods("GET")
 	r.HandleFunc(
 		res.Insert.Route(),
-		routes.Insert(w, r),
-	).Methods("GET")
+		server.Insert,
+	).Methods("POST")
 
 	//TODO handler for 404s?
 	return middleware.Wrap(log, r)

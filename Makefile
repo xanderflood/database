@@ -5,7 +5,7 @@ all: $(commands)
 $(commands):
 	@echo "Building command $@"
 	go build cmd/$@/main.go
-	mv main bin/$@
+	mv main bin/$@/$@
 
 run: api
 	godotenv -f config/.env bin/api
